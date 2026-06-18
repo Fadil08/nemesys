@@ -10,15 +10,29 @@ import { syncZabbixHosts, testZabbixConnection } from './zabbix';
 dotenv.config();
 
 const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-  },
-});
 
-app.use(cors());
+// Detect if running on Vercel (serverless) or locally
+const IS_VERCEL = process.env.VERCEL === '1' || process.env.VERCEL_ENV !== undefined;
+
+let io: Server | null = null;
+let httpServer: ReturnType<typeof createServer> | null = null;
+
+// Only create HTTP server + Socket.io when NOT on Vercel
+if (!IS_VERCEL) {
+  httpServer = createServer(app);
+  io = new Server(httpServer, {
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST'],
+    },
+  });
+}
+
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json());
 
 import { handleLogin } from './auth';
@@ -26,10 +40,39 @@ import crudRouter from './routes/crud';
 
 app.post('/api/login', handleLogin);
 
-// Broadcast database change helper
+// Broadcast database change helper (no-op on Vercel)
 async function broadcastUpdate() {
-  io.emit('data_changed');
+  if (io) {
+    io.emit('data_changed');
+  }
 }
+
+// Track if database has been initialized (for serverless cold starts)
+let dbInitialized = false;
+async function ensureDbInitialized() {
+  if (!dbInitialized) {
+    await initializeDatabase();
+    dbInitialized = true;
+  }
+}
+
+// Middleware: ensure DB is ready on every Vercel request (cold start handling)
+if (IS_VERCEL) {
+  app.use(async (req, res, next) => {
+    try {
+      await ensureDbInitialized();
+      next();
+    } catch (error) {
+      console.error('DB initialization error:', error);
+      res.status(500).json({ error: 'Database initialization failed' });
+    }
+  });
+}
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', environment: IS_VERCEL ? 'vercel' : 'local', timestamp: new Date().toISOString() });
+});
 
 // ----------------------------------------------------
 // REST API Endpoints
@@ -144,12 +187,73 @@ app.post('/api/alerts/trigger', async (req, res) => {
   }
 });
 
-// Manual assign task
+// Manager approve ticket (Open → Approved)
+app.post('/api/tasks/:id/approve', async (req, res) => {
+  const taskId = parseInt(req.params.id);
+  try {
+    const [taskRows]: any = await pool.query('SELECT * FROM tasks WHERE id = ?', [taskId]);
+    if (taskRows.length === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    if (taskRows[0].status !== 'Open') {
+      return res.status(400).json({ error: 'Hanya tiket berstatus Open yang bisa di-approve' });
+    }
+    await pool.query('UPDATE tasks SET status = "Approved" WHERE id = ?', [taskId]);
+    broadcastUpdate();
+    res.json({ message: 'Tiket berhasil di-approve oleh Manager' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Database error approving task' });
+  }
+});
+
+// Manager reject ticket (Open → Rejected, device back to Up)
+app.post('/api/tasks/:id/reject', async (req, res) => {
+  const taskId = parseInt(req.params.id);
+  const { reason } = req.body;
+  try {
+    const [taskRows]: any = await pool.query('SELECT * FROM tasks WHERE id = ?', [taskId]);
+    if (taskRows.length === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    if (taskRows[0].status !== 'Open') {
+      return res.status(400).json({ error: 'Hanya tiket berstatus Open yang bisa di-reject' });
+    }
+    const task = taskRows[0];
+    const rejectedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+    // 1. Reject ticket
+    await pool.query(
+      'UPDATE tasks SET status = "Rejected", completed_at = ?, resolution_notes = ? WHERE id = ?',
+      [rejectedAt, reason || 'Tiket ditolak oleh Manager.', taskId]
+    );
+
+    // 2. Restore device status to Up
+    await pool.query('UPDATE devices SET status = "Up" WHERE id = ?', [task.device_id]);
+
+    broadcastUpdate();
+    res.json({ message: 'Tiket berhasil di-reject oleh Manager' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Database error rejecting task' });
+  }
+});
+
+// Manual assign task (only for Approved tickets)
 app.post('/api/tasks/:id/assign', async (req, res) => {
   const taskId = parseInt(req.params.id);
   const { userId } = req.body;
 
   try {
+    // Verify task exists and is in Approved status
+    const [taskCheck]: any = await pool.query('SELECT status FROM tasks WHERE id = ?', [taskId]);
+    if (taskCheck.length === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    if (taskCheck[0].status !== 'Approved' && taskCheck[0].status !== 'In Progress') {
+      return res.status(400).json({ error: 'Tiket harus di-approve Manager terlebih dahulu sebelum bisa di-assign' });
+    }
+
     const [userRows]: any = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
     if (userRows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
@@ -466,23 +570,31 @@ const handleTelegramBotAction = async (action: 'accept' | 'complete', taskId: nu
 
 app.use('/api', crudRouter);
 
-// Start Server Setup
-const PORT = process.env.PORT || 5000;
+// ----------------------------------------------------
+// Server Start: Local vs Vercel
+// ----------------------------------------------------
+if (!IS_VERCEL) {
+  // LOCAL MODE: Start traditional HTTP server with WebSocket + Telegram + Zabbix polling
+  const PORT = process.env.PORT || 5000;
 
-async function start() {
-  await initializeDatabase();
-  initTelegramBot(handleTelegramBotAction);
+  async function start() {
+    await initializeDatabase();
+    initTelegramBot(handleTelegramBotAction);
 
-  // Sync Zabbix hosts on startup and then every 30 seconds
-  await syncZabbixHosts();
-  setInterval(async () => {
+    // Sync Zabbix hosts on startup and then every 30 seconds
     await syncZabbixHosts();
-    broadcastUpdate();
-  }, 30000);
+    setInterval(async () => {
+      await syncZabbixHosts();
+      broadcastUpdate();
+    }, 30000);
 
-  httpServer.listen(PORT, () => {
-    console.log(`🚀 Server NEMESYS running on port ${PORT}`);
-  });
+    httpServer!.listen(PORT, () => {
+      console.log(`🚀 Server NEMESYS running on port ${PORT}`);
+    });
+  }
+
+  start();
 }
 
-start();
+// VERCEL MODE: Export the Express app as the default handler for serverless
+export default app;

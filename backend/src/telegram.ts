@@ -8,8 +8,16 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 let bot: TelegramBot | null = null;
 
 export function initTelegramBot(onAction: (action: 'accept' | 'complete', taskId: number) => void) {
+  const IS_VERCEL = process.env.VERCEL === '1' || process.env.VERCEL_ENV !== undefined;
+
   if (!token || token.includes('YOUR_TELEGRAM_BOT_TOKEN')) {
     console.warn('⚠️ WARNING: Telegram Bot Token not set in .env. Bot features will run in simulation mode.');
+    return;
+  }
+
+  // Vercel serverless cannot run long-polling bots
+  if (IS_VERCEL) {
+    console.log('ℹ️ Telegram Bot polling disabled on Vercel serverless. Use webhook mode instead.');
     return;
   }
 

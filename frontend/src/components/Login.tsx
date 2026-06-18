@@ -150,11 +150,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '11px', color: 'var(--text-muted)' }}>
-          Akun uji coba:<br />
-          Admin: <b>admin_dika</b> (Pass: <b>admin123</b>)<br />
-          Teknisi: <b>rizal_tech</b> (Pass: <b>password</b>)
-        </div>
+
       </div>
     </div>
   );

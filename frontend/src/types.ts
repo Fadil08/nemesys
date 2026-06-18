@@ -45,7 +45,7 @@ export interface DailyTask {
   location: string;
   assigned_user_id: number | null;
   assigned_user_name: string | null;
-  status: 'Open' | 'In Progress' | 'Completed';
+  status: 'Open' | 'Approved' | 'Rejected' | 'In Progress' | 'Completed';
   severity: 'Warning' | 'Alert' | 'Emergency';
   started_at: string;
   completed_at: string | null;

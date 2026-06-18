@@ -325,7 +325,7 @@ export default function App() {
       case 'dashboard':
         return <Dashboard devices={devices} tasks={tasks} onTriggerAlert={triggerAlert} onNavigate={setCurrentMenu} />;
       case 'tasks':
-        return <DailyTaskComponent tasks={tasks} users={users} missions={missions} onAssignTask={handleAssignTask} dailyTodos={dailyTodos} token={token || ''} onRefresh={fetchData} devices={devices} />;
+        return <DailyTaskComponent tasks={tasks} users={users} missions={missions} onAssignTask={handleAssignTask} dailyTodos={dailyTodos} token={token || ''} onRefresh={fetchData} devices={devices} userRole={currentUser?.role || 'Teknisi'} />;
       case 'mission-view':
         return <MissionPage customMissions={customMissions} users={users} token={token || ''} onRefresh={fetchData} isAdmin={currentUser?.role === 'Administrator'} />;
       case 'team':

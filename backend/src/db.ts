@@ -88,7 +88,7 @@ export async function initializeDatabase() {
         location VARCHAR(255) NOT NULL,
         assigned_user_id INT NULL,
         assigned_user_name VARCHAR(150) NULL,
-        status ENUM('Open', 'In Progress', 'Completed') NOT NULL DEFAULT 'Open',
+        status ENUM('Open', 'Approved', 'Rejected', 'In Progress', 'Completed') NOT NULL DEFAULT 'Open',
         severity ENUM('Warning', 'Alert', 'Emergency') NOT NULL DEFAULT 'Alert',
         started_at VARCHAR(100) NOT NULL,
         completed_at VARCHAR(100) NULL,
@@ -196,6 +196,12 @@ export async function initializeDatabase() {
     try {
       await pool.query("ALTER TABLE devices ADD COLUMN parent_id INT NULL");
       console.log('Migration: Verified extra device columns (description, category, web_config_url, device_image, parent_id).');
+    } catch (e) {}
+
+    // Migration: Expand tasks status ENUM for Manager approve/reject workflow
+    try {
+      await pool.query("ALTER TABLE tasks MODIFY COLUMN status ENUM('Open', 'Approved', 'Rejected', 'In Progress', 'Completed') NOT NULL DEFAULT 'Open'");
+      console.log('Migration: Expanded tasks.status ENUM with Approved/Rejected.');
     } catch (e) {}
 
     // Force update default users to have the correct password

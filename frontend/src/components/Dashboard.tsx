@@ -13,7 +13,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ devices, tasks, onTriggerA
   const totalDevices = devices.length;
   const upDevices = devices.filter((d) => d.status === 'Up').length;
   const downDevices = totalDevices - upDevices;
-  const activeTasks = tasks.filter((t) => t.status !== 'Completed').length;
+  const activeTasks = tasks.filter((t) => t.status !== 'Completed' && t.status !== 'Rejected').length;
   
   const completedTasks = tasks.filter((t) => t.status === 'Completed');
   const avgMTTR = completedTasks.length > 0 
@@ -105,7 +105,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ devices, tasks, onTriggerA
             </button>
           </div>
           <div className="table-container">
-            {tasks.filter(t => t.status !== 'Completed').length === 0 ? (
+            {tasks.filter(t => t.status !== 'Completed' && t.status !== 'Rejected').length === 0 ? (
               <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>
                 Tidak ada gangguan aktif. Semua jaringan dalam kondisi optimal (UP).
               </div>
@@ -121,7 +121,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ devices, tasks, onTriggerA
                   </tr>
                 </thead>
                 <tbody>
-                  {tasks.filter(t => t.status !== 'Completed').map(task => (
+                  {tasks.filter(t => t.status !== 'Completed' && t.status !== 'Rejected').map(task => (
                     <tr key={task.id}>
                       <td><span style={{ fontWeight: 600 }}>{task.device_name}</span></td>
                       <td><code>{task.ip_address}</code></td>
@@ -132,7 +132,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ devices, tasks, onTriggerA
                         </span>
                       </td>
                       <td>
-                        <span className={`badge ${task.status === 'Open' ? 'badge-danger' : 'badge-warning'}`}>
+                        <span
+                          className={`badge ${
+                            task.status === 'Open'
+                              ? 'badge-danger'
+                              : task.status === 'Approved'
+                              ? 'badge-info'
+                              : 'badge-warning'
+                          }`}
+                          style={task.status === 'Approved' ? {
+                            backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                            color: '#06b6d4',
+                            border: '1px solid rgba(6, 182, 212, 0.3)'
+                          } : undefined}
+                        >
                           {task.status}
                         </span>
                       </td>

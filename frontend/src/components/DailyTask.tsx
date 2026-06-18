@@ -11,9 +11,52 @@ interface DailyTaskProps {
   token: string;
   onRefresh: () => void;
   devices: Device[];
+  userRole: 'Administrator' | 'Manager' | 'Teknisi';
 }
 
-export const DailyTaskComponent: React.FC<DailyTaskProps> = ({ tasks, users, missions, onAssignTask, dailyTodos, token, onRefresh, devices }) => {
+export const DailyTaskComponent: React.FC<DailyTaskProps> = ({ tasks, users, missions, onAssignTask, dailyTodos, token, onRefresh, devices, userRole }) => {
+  const canManage = userRole === 'Administrator' || userRole === 'Manager';
+
+  const handleApproveTask = async (taskId: number) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}/approve`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setMsg('Tiket berhasil di-approve.');
+        onRefresh();
+      } else {
+        const err = await response.json();
+        setMsg(`Gagal approve: ${err.error}`);
+      }
+    } catch (error) {
+      setMsg('Gagal menghubungi server.');
+    }
+  };
+
+  const handleRejectTask = async (taskId: number) => {
+    const reason = prompt('Alasan penolakan tiket (opsional):');
+    try {
+      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason: reason || 'Tiket ditolak oleh Manager.' })
+      });
+      if (response.ok) {
+        setMsg('Tiket berhasil di-reject.');
+        onRefresh();
+      } else {
+        const err = await response.json();
+        setMsg(`Gagal reject: ${err.error}`);
+      }
+    } catch (error) {
+      setMsg('Gagal menghubungi server.');
+    }
+  };
   const [activeTab, setActiveTab] = useState<'tasks' | 'missions' | 'checklist'>('checklist');
   const [todoId, setTodoId] = useState<number | null>(null);
   const [taskName, setTaskName] = useState('');
@@ -734,11 +777,13 @@ export const DailyTaskComponent: React.FC<DailyTaskProps> = ({ tasks, users, mis
                           <td>{task.started_at}</td>
                           <td>{task.sla_minutes} Menit</td>
                           <td>
-                            {task.status === 'Completed' ? (
+                            {task.status === 'Completed' || task.status === 'Rejected' ? (
                               <span style={{ color: 'var(--text-secondary)', fontSize: '13.5px' }}>
                                 {task.assigned_user_name || 'Tidak ada'}
                               </span>
-                            ) : (
+                            ) : task.status === 'Open' ? (
+                              <span style={{ color: 'var(--text-muted)', fontSize: '12.5px', fontStyle: 'italic' }}>Menunggu approval Manager</span>
+                            ) : canManage && (task.status === 'Approved' || task.status === 'In Progress') ? (
                               <select
                                 value={task.assigned_user_id || ''}
                                 onChange={(e) => onAssignTask(task.id, Number(e.target.value))}
@@ -759,25 +804,79 @@ export const DailyTaskComponent: React.FC<DailyTaskProps> = ({ tasks, users, mis
                                   </option>
                                 ))}
                               </select>
+                            ) : (
+                              <span style={{ color: 'var(--text-secondary)', fontSize: '13.5px' }}>
+                                {task.assigned_user_name || 'Belum di-assign'}
+                              </span>
                             )}
                           </td>
                           <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                               <span
                                 className={`badge ${
                                   task.status === 'Completed'
                                     ? 'badge-success'
                                     : task.status === 'In Progress'
                                     ? 'badge-warning'
+                                    : task.status === 'Approved'
+                                    ? 'badge-info'
+                                    : task.status === 'Rejected'
+                                    ? 'badge-muted'
                                     : 'badge-danger'
                                 }`}
+                                style={task.status === 'Approved' ? {
+                                  backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                                  color: '#06b6d4',
+                                  border: '1px solid rgba(6, 182, 212, 0.3)'
+                                } : task.status === 'Rejected' ? {
+                                  backgroundColor: 'rgba(100, 116, 139, 0.15)',
+                                  color: '#94a3b8',
+                                  border: '1px solid rgba(100, 116, 139, 0.3)'
+                                } : undefined}
                               >
                                 {task.status}
                               </span>
-                              {task.status !== 'Completed' && (
+                              {(task.status === 'In Progress' || task.status === 'Approved') && (
                                 <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
                                   ({completedStepsCount}/{totalStepsCount} Langkah)
                                 </span>
+                              )}
+                              {/* Manager/Admin: Approve & Reject buttons for Open tickets */}
+                              {task.status === 'Open' && canManage && (
+                                <>
+                                  <button
+                                    onClick={() => handleApproveTask(task.id)}
+                                    style={{
+                                      backgroundColor: '#06b6d4',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: '4px',
+                                      padding: '4px 10px',
+                                      fontSize: '11.5px',
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s ease',
+                                    }}
+                                  >
+                                    ✓ Approve
+                                  </button>
+                                  <button
+                                    onClick={() => handleRejectTask(task.id)}
+                                    style={{
+                                      backgroundColor: '#64748b',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: '4px',
+                                      padding: '4px 10px',
+                                      fontSize: '11.5px',
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s ease',
+                                    }}
+                                  >
+                                    ✗ Reject
+                                  </button>
+                                </>
                               )}
                               {task.status === 'Completed' && (
                                 <button

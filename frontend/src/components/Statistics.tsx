@@ -20,7 +20,10 @@ export const Statistics: React.FC<StatisticsProps> = ({ devices, tasks, categori
     if (t.status === 'Completed' && t.completed_at) {
       const diffMs = new Date(t.completed_at).getTime() - new Date(t.started_at).getTime();
       return acc + Math.round(diffMs / 60000);
-    } else if (t.status !== 'Completed') {
+    } else if (t.status === 'Rejected' && t.completed_at) {
+      const diffMs = new Date(t.completed_at).getTime() - new Date(t.started_at).getTime();
+      return acc + Math.round(diffMs / 60000);
+    } else if (t.status !== 'Completed' && t.status !== 'Rejected') {
       const diffMs = Date.now() - new Date(t.started_at).getTime();
       return acc + Math.round(diffMs / 60000);
     }
@@ -349,6 +352,9 @@ export const Statistics: React.FC<StatisticsProps> = ({ devices, tasks, categori
                   if (t.status === 'Completed' && t.completed_at) {
                     const diffMs = new Date(t.completed_at).getTime() - new Date(t.started_at).getTime();
                     durationMins = `${Math.round(diffMs / 60000)}m`;
+                  } else if (t.status === 'Rejected' && t.completed_at) {
+                    const diffMs = new Date(t.completed_at).getTime() - new Date(t.started_at).getTime();
+                    durationMins = `${Math.round(diffMs / 60000)}m`;
                   } else {
                     const diffMs = Date.now() - new Date(t.started_at).getTime();
                     durationMins = `${Math.round(diffMs / 60000)}m (Active)`;
@@ -367,7 +373,28 @@ export const Statistics: React.FC<StatisticsProps> = ({ devices, tasks, categori
                         {t.resolution_notes || 'Belum ditangani'}
                       </td>
                       <td>
-                        <span className={`badge ${t.status === 'Completed' ? 'badge-success' : t.status === 'In Progress' ? 'badge-warning' : 'badge-danger'}`}>
+                        <span
+                          className={`badge ${
+                            t.status === 'Completed'
+                              ? 'badge-success'
+                              : t.status === 'In Progress'
+                              ? 'badge-warning'
+                              : t.status === 'Approved'
+                              ? 'badge-info'
+                              : t.status === 'Rejected'
+                              ? 'badge-muted'
+                              : 'badge-danger'
+                          }`}
+                          style={t.status === 'Approved' ? {
+                            backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                            color: '#06b6d4',
+                            border: '1px solid rgba(6, 182, 212, 0.3)'
+                          } : t.status === 'Rejected' ? {
+                            backgroundColor: 'rgba(100, 116, 139, 0.15)',
+                            color: '#94a3b8',
+                            border: '1px solid rgba(100, 116, 139, 0.3)'
+                          } : undefined}
+                        >
                           {t.status}
                         </span>
                       </td>

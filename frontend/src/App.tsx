@@ -33,7 +33,7 @@ import { Login } from './components/Login';
 import { CrudManager } from './components/CrudManager';
 import { EditLocation } from './components/EditLocation';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = 'https://nemesys.vercel.app/';
 const socket = io(BACKEND_URL);
 
 interface AuthUser {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, Edit2, Shield, Radio, Plus, Search, X, Layers, Upload } from 'lucide-react';
 import type { Device, User, DeviceCategory } from '../types';
+import { BACKEND_URL } from '../App';
 
 interface CrudManagerProps {
   devices: Device[];
@@ -52,7 +53,7 @@ export const CrudManager: React.FC<CrudManagerProps> = ({ devices, users, token,
   // Fetch Categories from Backend
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/categories');
+      const response = await fetch(`${BACKEND_URL}/api/categories`);
       const data = await response.json();
       if (!data.error) {
         setCategories(data);
@@ -107,8 +108,8 @@ export const CrudManager: React.FC<CrudManagerProps> = ({ devices, users, token,
     setMsg('');
 
     const url = userId 
-      ? `http://localhost:5000/api/users/${userId}` 
-      : 'http://localhost:5000/api/users';
+      ? `${BACKEND_URL}/api/users/${userId}` 
+      : `${BACKEND_URL}/api/users`;
     
     const method = userId ? 'PUT' : 'POST';
 
@@ -140,7 +141,7 @@ export const CrudManager: React.FC<CrudManagerProps> = ({ devices, users, token,
     setMsg('');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/users/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -169,8 +170,8 @@ export const CrudManager: React.FC<CrudManagerProps> = ({ devices, users, token,
     setMsg('');
 
     const url = categoryId 
-      ? `http://localhost:5000/api/categories/${categoryId}` 
-      : 'http://localhost:5000/api/categories';
+      ? `${BACKEND_URL}/api/categories/${categoryId}` 
+      : `${BACKEND_URL}/api/categories`;
     
     const method = categoryId ? 'PUT' : 'POST';
 
@@ -203,7 +204,7 @@ export const CrudManager: React.FC<CrudManagerProps> = ({ devices, users, token,
     setMsg('');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/categories/${id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/categories/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -254,8 +255,8 @@ export const CrudManager: React.FC<CrudManagerProps> = ({ devices, users, token,
     setMsg('');
 
     const url = deviceId 
-      ? `http://localhost:5000/api/devices/${deviceId}` 
-      : 'http://localhost:5000/api/devices';
+      ? `${BACKEND_URL}/api/devices/${deviceId}` 
+      : `${BACKEND_URL}/api/devices`;
     
     const method = deviceId ? 'PUT' : 'POST';
 
@@ -300,7 +301,7 @@ export const CrudManager: React.FC<CrudManagerProps> = ({ devices, users, token,
     setMsg('');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/devices/${id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/devices/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

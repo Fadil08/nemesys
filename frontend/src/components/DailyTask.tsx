@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { DailyTask as ITask, User, Mission, DailyTodo, Device } from '../types';
 import { ClipboardList, Target, Award, CheckCircle, AlertTriangle, X, Download } from 'lucide-react';
+import { BACKEND_URL } from '../App';
 
 interface DailyTaskProps {
   tasks: ITask[];
@@ -19,7 +20,7 @@ export const DailyTaskComponent: React.FC<DailyTaskProps> = ({ tasks, users, mis
 
   const handleApproveTask = async (taskId: number) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}/approve`, {
+      const response = await fetch(`${BACKEND_URL}/api/tasks/${taskId}/approve`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -38,7 +39,7 @@ export const DailyTaskComponent: React.FC<DailyTaskProps> = ({ tasks, users, mis
   const handleRejectTask = async (taskId: number) => {
     const reason = prompt('Alasan penolakan tiket (opsional):');
     try {
-      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}/reject`, {
+      const response = await fetch(`${BACKEND_URL}/api/tasks/${taskId}/reject`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,7 +81,7 @@ export const DailyTaskComponent: React.FC<DailyTaskProps> = ({ tasks, users, mis
     if (!selectedDeviceId) return;
 
     try {
-      const response = await fetch('http://localhost:5000/api/tasks', {
+      const response = await fetch(`${BACKEND_URL}/api/tasks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,7 +135,7 @@ export const DailyTaskComponent: React.FC<DailyTaskProps> = ({ tasks, users, mis
 
   const handleUpdateSteps = async (taskId: number, updatedSteps: TaskStep[]) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}/steps`, {
+      const response = await fetch(`${BACKEND_URL}/api/tasks/${taskId}/steps`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -342,7 +343,7 @@ export const DailyTaskComponent: React.FC<DailyTaskProps> = ({ tasks, users, mis
     if (!completeTaskId) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/tasks/${completeTaskId}/complete`, {
+      const response = await fetch(`${BACKEND_URL}/api/tasks/${completeTaskId}/complete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -376,8 +377,8 @@ export const DailyTaskComponent: React.FC<DailyTaskProps> = ({ tasks, users, mis
     setMsg('');
 
     const url = todoId 
-      ? `http://localhost:5000/api/daily-todos/${todoId}` 
-      : 'http://localhost:5000/api/daily-todos';
+      ? `${BACKEND_URL}/api/daily-todos/${todoId}` 
+      : `${BACKEND_URL}/api/daily-todos`;
     
     const method = todoId ? 'PUT' : 'POST';
 
@@ -407,7 +408,7 @@ export const DailyTaskComponent: React.FC<DailyTaskProps> = ({ tasks, users, mis
 
   const handleToggleTodo = async (todo: DailyTodo) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/daily-todos/${todo.id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/daily-todos/${todo.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -426,7 +427,7 @@ export const DailyTaskComponent: React.FC<DailyTaskProps> = ({ tasks, users, mis
   const handleDeleteTodo = async (id: number) => {
     if (!confirm('Apakah Anda yakin ingin menghapus kegiatan ini?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/daily-todos/${id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/daily-todos/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

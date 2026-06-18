@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import type { Device, DeviceCategory } from '../types';
+import { BACKEND_URL } from '../App';
 
 interface EditLocationProps {
   devices: Device[];
@@ -246,7 +247,7 @@ export const EditLocation: React.FC<EditLocationProps> = ({ devices, token, onRe
     setMsg('');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/devices/${selectedDeviceId}`, {
+      const response = await fetch(`${BACKEND_URL}/api/devices/${selectedDeviceId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

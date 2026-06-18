@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShieldAlert, User, KeyRound } from 'lucide-react';
+import { BACKEND_URL } from '../App';
 
 interface LoginProps {
   onLoginSuccess: (token: string, user: { id: number; username: string; name: string; role: 'Administrator' | 'Manager' | 'Teknisi' }) => void;
@@ -17,7 +18,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/login', {
+      const response = await fetch(`${BACKEND_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

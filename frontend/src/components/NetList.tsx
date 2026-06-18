@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Device, DeviceCategory } from '../types';
 import { Search, Plus, X } from 'lucide-react';
+import { BACKEND_URL } from '../App';
 
 interface NetListProps {
   devices: Device[];
@@ -59,8 +60,8 @@ export const NetList: React.FC<NetListProps> = ({ devices, token, onRefresh, isA
     setMsg('');
 
     const url = deviceId 
-      ? `http://localhost:5000/api/devices/${deviceId}` 
-      : 'http://localhost:5000/api/devices';
+      ? `${BACKEND_URL}/api/devices/${deviceId}` 
+      : `${BACKEND_URL}/api/devices`;
     
     const method = deviceId ? 'PUT' : 'POST';
 
@@ -109,7 +110,7 @@ export const NetList: React.FC<NetListProps> = ({ devices, token, onRefresh, isA
     setMsg('');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/devices/${id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/devices/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

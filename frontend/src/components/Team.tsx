@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { User } from '../types';
 import { PhoneCall, CheckCircle, Clock, Plus, X } from 'lucide-react';
+import { BACKEND_URL } from '../App';
 
 interface TeamProps {
   users: User[];
@@ -45,8 +46,8 @@ export const Team: React.FC<TeamProps> = ({ users, token, isAdmin, onRefresh }) 
     setMsg('');
 
     const url = userId 
-      ? `http://localhost:5000/api/users/${userId}` 
-      : 'http://localhost:5000/api/users';
+      ? `${BACKEND_URL}/api/users/${userId}` 
+      : `${BACKEND_URL}/api/users`;
     
     const method = userId ? 'PUT' : 'POST';
 
@@ -99,7 +100,7 @@ export const Team: React.FC<TeamProps> = ({ users, token, isAdmin, onRefresh }) 
   const handleDeleteUser = async (id: number) => {
     if (!confirm('Apakah Anda yakin ingin menghapus user ini?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/users/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

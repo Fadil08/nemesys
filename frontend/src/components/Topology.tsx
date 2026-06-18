@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Network } from 'vis-network';
 import type { Device } from '../types';
+import { BACKEND_URL } from '../App';
 
 interface TopologyProps {
   devices: Device[];
@@ -157,7 +158,7 @@ export const Topology: React.FC<TopologyProps> = ({ devices, token, onRefresh, i
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/devices/${selectedDeviceId}`, {
+      const response = await fetch(`${BACKEND_URL}/api/devices/${selectedDeviceId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

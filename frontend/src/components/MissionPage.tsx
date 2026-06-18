@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { CustomMission, User } from '../types';
 import { Search, X, RefreshCw } from 'lucide-react';
+import { BACKEND_URL } from '../App';
 
 interface MissionPageProps {
   customMissions: CustomMission[];
@@ -63,8 +64,8 @@ export const MissionPage: React.FC<MissionPageProps> = ({ customMissions, users,
     }
 
     const url = missionId 
-      ? `http://localhost:5000/api/custom-missions/${missionId}` 
-      : 'http://localhost:5000/api/custom-missions';
+      ? `${BACKEND_URL}/api/custom-missions/${missionId}` 
+      : `${BACKEND_URL}/api/custom-missions`;
     
     const method = missionId ? 'PUT' : 'POST';
 
@@ -107,7 +108,7 @@ export const MissionPage: React.FC<MissionPageProps> = ({ customMissions, users,
   const handleDeleteMission = async (id: number) => {
     if (!confirm('Apakah Anda yakin ingin menghapus mission ini?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/custom-missions/${id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/custom-missions/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

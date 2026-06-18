@@ -13,8 +13,8 @@ interface EditLocationProps {
 export const EditLocation: React.FC<EditLocationProps> = ({ devices, token, onRefresh, categories }) => {
   const [selectedDeviceId, setSelectedDeviceId] = useState<number | null>(null);
   const [locationName, setLocationName] = useState('');
-  const [latitude, setLatitude] = useState(-8.2205);
-  const [longitude, setLongitude] = useState(114.3595);
+  const [latitude, setLatitude] = useState(-8.2295813);
+  const [longitude, setLongitude] = useState(114.3632317);
   const [msg, setMsg] = useState('');
 
   // Search/Filter for devices list
@@ -42,7 +42,7 @@ export const EditLocation: React.FC<EditLocationProps> = ({ devices, token, onRe
     if (!mapRef.current) return;
 
     mapInstance.current = L.map(mapRef.current, {
-      center: [-8.2205, 114.3595],
+      center: [-8.2295813, 114.3632317],
       zoom: 17,
       zoomControl: true
     });
@@ -478,7 +478,7 @@ export const EditLocation: React.FC<EditLocationProps> = ({ devices, token, onRe
           <div style={{ display: 'flex', gap: '4px' }}>
             <button
               type="button"
-              onClick={() => handlePresetJump(-8.2205, 114.3595)}
+              onClick={() => handlePresetJump(-8.2295813, 114.3632317)}
               style={{
                 backgroundColor: 'rgba(30, 41, 59, 0.9)',
                 color: '#fff',

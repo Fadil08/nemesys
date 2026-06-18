@@ -300,38 +300,38 @@ export async function initializeDatabase() {
 
     // Seed initial devices (Refreshed for UNTAG Banyuwangi Campus layout)
     const [deviceRows]: any = await pool.query('SELECT COUNT(*) as count FROM devices');
-    // If we have old Malang/Jember coordinates (lng < 114.2), reset devices for UNTAG BWI coordinates
-    const [sampleDev]: any = await pool.query('SELECT longitude FROM devices LIMIT 1');
-    const needsBwiReset = sampleDev.length > 0 && sampleDev[0].longitude < 114.2;
+    // If we have old coordinates (Malang/Jember or old off-center BWI), reset devices for precise UNTAG BWI coordinates
+    const [sampleDev]: any = await pool.query('SELECT latitude, longitude FROM devices LIMIT 1');
+    const needsBwiReset = sampleDev.length > 0 && (sampleDev[0].longitude < 114.3 || sampleDev[0].latitude > -8.225);
 
     if (deviceRows[0].count === 0 || needsBwiReset) {
       await pool.query('DELETE FROM devices');
       await pool.query(`
         INSERT INTO devices (id, name, type, ip_address, location, latitude, longitude, status, last_ping, is_backbone, battery_percentage, voltage, solar_status) VALUES
-        (1, 'Core Router Utama UNTAG BWI', 'Router', '10.10.10.1', 'Gedung Rektorat Lt 1', -8.2205, 114.3595, 'Up', 'Just now', TRUE, NULL, NULL, NULL),
-        (2, 'Switch Backbone Rektorat', 'Switch', '10.10.10.2', 'Server Room Rektorat', -8.2201, 114.3592, 'Up', 'Just now', TRUE, NULL, NULL, NULL),
-        (3, 'Switch Gedung Kopi BWI', 'Switch', '10.10.20.1', 'Gedung Kopi Center BWI', -8.2221, 114.3604, 'Down', '5m ago', FALSE, NULL, NULL, NULL),
-        (4, 'AP-GedungKopi-BWI-01', 'Access_Point', '10.10.20.11', 'Lobi Gazebo Gedung Kopi', -8.2222, 114.3605, 'Down', '5m ago', FALSE, NULL, NULL, NULL),
-        (5, 'AP-Rektorat-Lobi', 'Access_Point', '10.10.30.11', 'Lobi Rektorat UNTAG', -8.2200, 114.3593, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
-        (6, 'AP-Perpustakaan-Lt1', 'Access_Point', '10.10.40.11', 'Perpustakaan Lt 1', -8.2210, 114.3601, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
-        (7, 'AP-Teknik-GdA', 'Access_Point', '10.10.50.11', 'Fakultas Teknik Gd A', -8.2215, 114.3585, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
-        (8, 'AP-Teknik-GdB', 'Access_Point', '10.10.50.12', 'Fakultas Teknik Gd B', -8.2218, 114.3582, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
-        (9, 'AP-Hukum-RuangBaca', 'Access_Point', '10.10.60.11', 'Fakultas Hukum R. Baca', -8.2195, 114.3590, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
-        (10, 'AP-Ekonomi-Lobi', 'Access_Point', '10.10.60.12', 'Fakultas Ekonomi Lobi', -8.2203, 114.3608, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
-        (11, 'AP-FISIP-Lobi', 'Access_Point', '10.10.70.11', 'FISIP Lobi Utama', -8.2208, 114.3599, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
-        (12, 'AP-Masjid-Darussalam', 'Access_Point', '10.10.80.11', 'Masjid UNTAG BWI', -8.2192, 114.3588, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
-        (13, 'AP-Student-Center', 'Access_Point', '10.10.90.11', 'Student Center Hall', -8.2206, 114.3590, 'Down', '10m ago', FALSE, NULL, NULL, NULL),
-        (14, 'AP-Auditorium-Lt1', 'Access_Point', '10.10.100.11', 'Auditorium Lt 1', -8.2212, 114.3595, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
-        (15, 'AP-Auditorium-Lt2', 'Access_Point', '10.10.100.12', 'Auditorium Lt 2', -8.2213, 114.3596, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
-        (16, 'AP-Lab-Komputer', 'Access_Point', '10.10.110.11', 'Lab Komputer Bersama', -8.2214, 114.3588, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
-        (17, 'AP-Gazebo-Utara', 'Access_Point', '10.10.120.11', 'Gazebo Area Utara', -8.2188, 114.3591, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
-        (18, 'AP-Kantin-Kampus', 'Access_Point', '10.10.130.11', 'Kantin Kampus UNTAG', -8.2223, 114.3589, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
-        (19, 'AP-Parkir-Utama', 'Access_Point', '10.10.140.11', 'Area Parkir Utama', -8.2190, 114.3600, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
-        (20, 'AP-Solar-OutdoorBWI', 'Access_Point', '10.10.150.11', 'AP Solar Lapangan Basket', -8.2211, 114.3607, 'Up', 'Just now', FALSE, 90, 12.8, 'Charging'),
-        (21, 'AP-Koperasi-Mahasiswa', 'Access_Point', '10.10.160.11', 'Koperasi Mahasiswa BWI', -8.2225, 114.3598, 'Down', '15m ago', FALSE, NULL, NULL, NULL),
-        (22, 'AP-Gedung-B-Lobi', 'Access_Point', '10.10.170.11', 'Gedung B Lobi Tengah', -8.2217, 114.3591, 'Up', 'Just now', FALSE, NULL, NULL, NULL)
+        (1, 'Core Router Utama UNTAG BWI', 'Router', '10.10.10.1', 'Gedung Rektorat Lt 1', -8.229581, 114.363231, 'Up', 'Just now', TRUE, NULL, NULL, NULL),
+        (2, 'Switch Backbone Rektorat', 'Switch', '10.10.10.2', 'Server Room Rektorat', -8.229181, 114.362931, 'Up', 'Just now', TRUE, NULL, NULL, NULL),
+        (3, 'Switch Gedung Kopi BWI', 'Switch', '10.10.20.1', 'Gedung Kopi Center BWI', -8.231181, 114.364131, 'Down', '5m ago', FALSE, NULL, NULL, NULL),
+        (4, 'AP-GedungKopi-BWI-01', 'Access_Point', '10.10.20.11', 'Lobi Gazebo Gedung Kopi', -8.231281, 114.364231, 'Down', '5m ago', FALSE, NULL, NULL, NULL),
+        (5, 'AP-Rektorat-Lobi', 'Access_Point', '10.10.30.11', 'Lobi Rektorat UNTAG', -8.229081, 114.363031, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
+        (6, 'AP-Perpustakaan-Lt1', 'Access_Point', '10.10.40.11', 'Perpustakaan Lt 1', -8.230081, 114.363831, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
+        (7, 'AP-Teknik-GdA', 'Access_Point', '10.10.50.11', 'Fakultas Teknik Gd A', -8.230581, 114.362231, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
+        (8, 'AP-Teknik-GdB', 'Access_Point', '10.10.50.12', 'Fakultas Teknik Gd B', -8.230881, 114.361931, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
+        (9, 'AP-Hukum-RuangBaca', 'Access_Point', '10.10.60.11', 'Fakultas Hukum R. Baca', -8.228581, 114.362731, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
+        (10, 'AP-Ekonomi-Lobi', 'Access_Point', '10.10.60.12', 'Fakultas Ekonomi Lobi', -8.229381, 114.364531, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
+        (11, 'AP-FISIP-Lobi', 'Access_Point', '10.10.70.11', 'FISIP Lobi Utama', -8.229881, 114.363631, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
+        (12, 'AP-Masjid-Darussalam', 'Access_Point', '10.10.80.11', 'Masjid UNTAG BWI', -8.228281, 114.362531, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
+        (13, 'AP-Student-Center', 'Access_Point', '10.10.90.11', 'Student Center Hall', -8.229681, 114.362731, 'Down', '10m ago', FALSE, NULL, NULL, NULL),
+        (14, 'AP-Auditorium-Lt1', 'Access_Point', '10.10.100.11', 'Auditorium Lt 1', -8.230281, 114.363231, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
+        (15, 'AP-Auditorium-Lt2', 'Access_Point', '10.10.100.12', 'Auditorium Lt 2', -8.230381, 114.363331, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
+        (16, 'AP-Lab-Komputer', 'Access_Point', '10.10.110.11', 'Lab Komputer Bersama', -8.230481, 114.362531, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
+        (17, 'AP-Gazebo-Utara', 'Access_Point', '10.10.120.11', 'Gazebo Area Utara', -8.227881, 114.362831, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
+        (18, 'AP-Kantin-Kampus', 'Access_Point', '10.10.130.11', 'Kantin Kampus UNTAG', -8.231381, 114.362631, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
+        (19, 'AP-Parkir-Utama', 'Access_Point', '10.10.140.11', 'Area Parkir Utama', -8.228081, 114.363731, 'Up', 'Just now', FALSE, NULL, NULL, NULL),
+        (20, 'AP-Solar-OutdoorBWI', 'Access_Point', '10.10.150.11', 'AP Solar Lapangan Basket', -8.230181, 114.364431, 'Up', 'Just now', FALSE, 90, 12.8, 'Charging'),
+        (21, 'AP-Koperasi-Mahasiswa', 'Access_Point', '10.10.160.11', 'Koperasi Mahasiswa BWI', -8.231581, 114.363531, 'Down', '15m ago', FALSE, NULL, NULL, NULL),
+        (22, 'AP-Gedung-B-Lobi', 'Access_Point', '10.10.170.11', 'Gedung B Lobi Tengah', -8.230781, 114.362831, 'Up', 'Just now', FALSE, NULL, NULL, NULL)
       `);
-      console.log('Seeded UNTAG Banyuwangi default devices.');
+      console.log('Seeded UNTAG Banyuwangi precise default devices.');
     }
 
     console.log('Database tables verified and ready.');

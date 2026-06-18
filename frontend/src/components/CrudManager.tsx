@@ -85,8 +85,8 @@ export const CrudManager: React.FC<CrudManagerProps> = ({ devices, users, token,
     setDeviceType(categories.length > 0 ? categories[0].name : 'Router');
     setIpAddress('');
     setLocation('');
-    setLat(-8.2205);
-    setLng(114.3595);
+    setLat(-8.2295813);
+    setLng(114.3632317);
     setIsBackbone(false);
     setDescription('');
     setCategory('');

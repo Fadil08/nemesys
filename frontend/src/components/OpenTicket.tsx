@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle, Plus, Search, Filter } from 'lucide-react';
+import { AlertCircle, CheckCircle, Plus, Search } from 'lucide-react';
 import { BACKEND_URL } from '../App';
 
 interface Ticket {
@@ -60,7 +60,7 @@ interface OpenTicketProps {
   userRole?: string;
 }
 
-export const OpenTicket: React.FC<OpenTicketProps> = ({ token, userRole = 'Teknisi' }) => {
+export const OpenTicket: React.FC<OpenTicketProps> = ({ token, userRole: _userRole = 'Teknisi' }) => {
   const [activeTab, setActiveTab] = useState<'submit' | 'list'>('submit');
   const [formData, setFormData] = useState<FormData>({
     full_name: '',
@@ -608,7 +608,7 @@ export const OpenTicket: React.FC<OpenTicketProps> = ({ token, userRole = 'Tekni
                       </tr>
                     ) : (
                       tickets.map(ticket => (
-                        <tr key={ticket.id} style={{ borderBottom: '1px solid #334155', hover: { background: '#334155' } }}>
+                        <tr key={ticket.id} style={{ borderBottom: '1px solid #334155' }}>
                           <td style={{ padding: '1rem', color: '#fff', fontSize: '0.875rem', fontWeight: '500' }}>
                             {ticket.ticket_number}
                           </td>

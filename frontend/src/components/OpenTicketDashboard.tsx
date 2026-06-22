@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle, Trash2, Edit2, User, Clock } from 'lucide-react';
+import { AlertCircle, CheckCircle, User } from 'lucide-react';
 import { BACKEND_URL } from '../App';
 
 interface Ticket {
@@ -33,7 +33,7 @@ interface OpenTicketDashboardProps {
   userRole?: string;
 }
 
-export const OpenTicketDashboard: React.FC<OpenTicketDashboardProps> = ({ token, userRole = 'Manager' }) => {
+export const OpenTicketDashboard: React.FC<OpenTicketDashboardProps> = ({ token, userRole: _userRole = 'Manager' }) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [technicians, setTechnicians] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -145,15 +145,7 @@ export const OpenTicketDashboard: React.FC<OpenTicketDashboardProps> = ({ token,
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Open': return { bg: '#eff6ff', text: '#0c4a6e' };
-      case 'In Progress': return { bg: '#fffbeb', text: '#78350f' };
-      case 'Resolved': return { bg: '#f0fdf4', text: '#166534' };
-      case 'Closed': return { bg: '#f3f4f6', text: '#374151' };
-      default: return { bg: '#f3f4f6', text: '#374151' };
-    }
-  };
+
 
   const getStatusBgColor = (status: string) => {
     switch (status) {

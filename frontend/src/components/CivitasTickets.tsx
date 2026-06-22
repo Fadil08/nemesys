@@ -4,10 +4,7 @@ import {
   UserPlus, 
   CheckSquare, 
   Clock, 
-  MessageSquare,
-  AlertTriangle,
   User,
-  Calendar,
   X
 } from 'lucide-react';
 import { BACKEND_URL } from '../App';

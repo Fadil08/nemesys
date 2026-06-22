@@ -339,7 +339,7 @@ export default function App() {
       case 'team':
         return <Team users={users} token={token || ''} isAdmin={currentUser?.role === 'Administrator'} onRefresh={fetchData} />;
       case 'civitas-tickets':
-        return <CivitasTickets token={token || ''} currentUser={currentUser} users={users} onRefresh={fetchData} />;
+        return <CivitasTickets token={token || ''} currentUser={currentUser!} users={users} onRefresh={fetchData} />;
       case 'open-tickets':
         return <OpenTicket token={token || ''} userRole={currentUser?.role || 'Teknisi'} />;
       case 'open-tickets-dashboard':

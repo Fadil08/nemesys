@@ -37,7 +37,7 @@ export const PublicTicketSubmit: React.FC<PublicTicketSubmitProps> = ({ onClose 
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [ticketNumber, setTicketNumber] = useState('');
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -68,7 +68,6 @@ export const PublicTicketSubmit: React.FC<PublicTicketSubmitProps> = ({ onClose 
       const data = await response.json();
 
       if (response.ok) {
-        setTicketNumber(data.ticket_number);
         setMessage({ type: 'success', text: `Ticket berhasil dibuat! Nomor Ticket: ${data.ticket_number}` });
         setFormData({
           full_name: '',

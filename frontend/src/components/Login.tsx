@@ -4,9 +4,10 @@ import { BACKEND_URL } from '../App';
 
 interface LoginProps {
   onLoginSuccess: (token: string, user: { id: number; username: string; name: string; role: 'Administrator' | 'Manager' | 'Teknisi' }) => void;
+  onOpenPublicHelpdesk: () => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onOpenPublicHelpdesk }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -151,6 +152,32 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </button>
         </form>
 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: '16px',
+          borderTop: '1px solid var(--border-color)',
+          paddingTop: '16px'
+        }}>
+          <button
+            type="button"
+            onClick={onOpenPublicHelpdesk}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--accent-secondary)',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'opacity 0.2s',
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.opacity = '0.8')}
+            onMouseOut={(e) => (e.currentTarget.style.opacity = '1')}
+          >
+            Butuh Bantuan IT? Buka Portal Helpdesk Civitas
+          </button>
+        </div>
 
       </div>
     </div>

@@ -92,3 +92,23 @@ export interface CustomMission {
   note?: string | null;
   mission_image?: string | null;
 }
+
+export interface UserTicket {
+  id: number;
+  ticket_number: string;
+  full_name: string;
+  id_number: string;
+  category: string;
+  unit_specification: string;
+  email: string;
+  whatsapp_number: string;
+  service_type: string;
+  description: string;
+  status: 'Open' | 'In Progress' | 'Resolved' | 'Closed' | 'Rejected';
+  assigned_user_id: number | null;
+  assigned_user_name: string | null;
+  created_at: string;
+  updated_at: string;
+  resolution_notes?: string | null;
+  image_url?: string | null;
+}

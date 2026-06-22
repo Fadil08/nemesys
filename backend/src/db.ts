@@ -162,6 +162,27 @@ export async function initializeDatabase() {
       ) ENGINE=InnoDB;
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_tickets (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        ticket_number VARCHAR(50) NOT NULL UNIQUE,
+        reporter_name VARCHAR(150) NOT NULL,
+        reporter_id VARCHAR(50) NOT NULL,
+        reporter_type VARCHAR(100) NOT NULL,
+        reporter_unit VARCHAR(150) NOT NULL,
+        email VARCHAR(150) NOT NULL,
+        whatsapp VARCHAR(50) NOT NULL,
+        category VARCHAR(150) NOT NULL,
+        description TEXT NOT NULL,
+        status ENUM('Open', 'In Progress', 'Completed', 'Rejected') NOT NULL DEFAULT 'Open',
+        assigned_user_id INT NULL,
+        assigned_user_name VARCHAR(150) NULL,
+        resolution_notes TEXT NULL,
+        created_at VARCHAR(100) NOT NULL,
+        updated_at VARCHAR(100) NULL
+      ) ENGINE=InnoDB;
+    `);
+
     // Migration: Add password column to users if it doesn't exist
     try {
       await pool.query("ALTER TABLE users ADD COLUMN password VARCHAR(255) NOT NULL DEFAULT 'password'");
@@ -196,6 +217,39 @@ export async function initializeDatabase() {
     try {
       await pool.query("ALTER TABLE devices ADD COLUMN parent_id INT NULL");
       console.log('Migration: Verified extra device columns (description, category, web_config_url, device_image, parent_id).');
+    } catch (e) {}
+
+    // Create open_tickets table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS open_tickets (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        ticket_number VARCHAR(50) NOT NULL UNIQUE,
+        full_name VARCHAR(150) NOT NULL,
+        id_number VARCHAR(50) NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        unit_specification VARCHAR(255) NOT NULL,
+        email VARCHAR(100) NOT NULL,
+        whatsapp_number VARCHAR(20) NOT NULL,
+        service_type VARCHAR(100) NOT NULL,
+        description TEXT NOT NULL,
+        status ENUM('Open', 'In Progress', 'Resolved', 'Closed') NOT NULL DEFAULT 'Open',
+        assigned_user_id INT NULL,
+        assigned_user_name VARCHAR(150) NULL,
+        created_at VARCHAR(100) NOT NULL,
+        updated_at VARCHAR(100) NOT NULL,
+        resolution_notes TEXT NULL,
+        image_url LONGTEXT NULL
+      ) ENGINE=InnoDB;
+    `);
+
+    try {
+      await pool.query("ALTER TABLE open_tickets MODIFY COLUMN category VARCHAR(100) NOT NULL");
+      console.log("Migration: open_tickets.category altered to VARCHAR(100)");
+    } catch (e) {}
+
+    try {
+      await pool.query("ALTER TABLE open_tickets ADD COLUMN image_url LONGTEXT NULL");
+      console.log("Migration: open_tickets.image_url added as LONGTEXT");
     } catch (e) {}
 
     // Migration: Expand tasks status ENUM for Manager approve/reject workflow

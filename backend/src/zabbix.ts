@@ -77,12 +77,13 @@ export async function syncZabbixHosts() {
     return;
   }
 
-  // Get hosts with interface details (IP Address)
+  // Get hosts with interface details (IP Address) and triggers to determine ICMP status
   const hosts = await callZabbixAPI(
     'host.get',
     {
       output: ['hostid', 'name', 'status', 'available'],
       selectInterfaces: ['ip'],
+      selectTriggers: ['triggerid', 'description', 'value', 'priority'],
     },
     token
   );
@@ -95,8 +96,18 @@ export async function syncZabbixHosts() {
   console.log(`Syncing ${hosts.length} hosts from Zabbix API to MySQL...`);
 
   for (const zHost of hosts) {
-    // Determine status: Zabbix available: 1 = Up, 2 = Down, 0 = Unknown
-    const status = zHost.available === '2' ? 'Down' : 'Up';
+    // Determine status: Zabbix available or active triggers indicating ICMP downtime
+    let status = zHost.available === '2' ? 'Down' : 'Up';
+    
+    const activeTriggers = zHost.triggers?.filter((t: any) => t.value === '1') || [];
+    const isOfflineTrigger = activeTriggers.some((t: any) => 
+      t.description.toLowerCase().includes('unavailable by icmp') ||
+      (t.description.toLowerCase().includes('ping') && 
+       (t.description.toLowerCase().includes('unavailable') || t.description.toLowerCase().includes('loss') || t.description.toLowerCase().includes('down')))
+    );
+    if (isOfflineTrigger) {
+      status = 'Down';
+    }
     const ipAddress = zHost.interfaces && zHost.interfaces[0] ? zHost.interfaces[0].ip : '0.0.0.0';
     const isBackbone = zHost.name.toLowerCase().includes('core') || zHost.name.toLowerCase().includes('backbone') ? 1 : 0;
     
@@ -104,10 +115,10 @@ export async function syncZabbixHosts() {
     const [rows]: any = await pool.query('SELECT * FROM devices WHERE name = ?', [zHost.name]);
 
     if (rows.length > 0) {
-      // Update existing device
+      // Update existing device (do NOT overwrite is_backbone to preserve manual classification)
       await pool.query(
-        'UPDATE devices SET status = ?, ip_address = ?, last_ping = "Just now", is_backbone = ? WHERE name = ?',
-        [status, ipAddress, isBackbone, zHost.name]
+        'UPDATE devices SET status = ?, ip_address = ?, last_ping = "Just now" WHERE name = ?',
+        [status, ipAddress, zHost.name]
       );
     } else {
       // Insert new device

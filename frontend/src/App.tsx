@@ -14,7 +14,8 @@ import {
   ShieldAlert,
   LogOut,
   Target,
-  Moon
+  Moon,
+  Ticket
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import type { Device, DailyTask, User, Mission, TemperatureLog, DailyTodo, CustomMission, DeviceCategory } from './types';
@@ -32,6 +33,10 @@ import { TelegramBot } from './components/TelegramBot';
 import { Login } from './components/Login';
 import { CrudManager } from './components/CrudManager';
 import { EditLocation } from './components/EditLocation';
+import { OpenTicket } from './components/OpenTicket';
+import { OpenTicketDashboard } from './components/OpenTicketDashboard';
+import { PublicHelpdesk } from './components/PublicHelpdesk';
+import { CivitasTickets } from './components/CivitasTickets';
 
 export const BACKEND_URL = window.location.hostname === 'localhost' 
   ? 'http://localhost:5000' 
@@ -76,6 +81,7 @@ export default function App() {
   const [currentMenu, setCurrentMenu] = useState<string>('dashboard');
   const [telegramOpen, setTelegramOpen] = useState<boolean>(true);
   const [currentTemp, setCurrentTemp] = useState<number>(24.5);
+  const [showPublicHelpdesk, setShowPublicHelpdesk] = useState<boolean>(true);
 
   const [tgMessages, setTgMessages] = useState<Array<{ id: number; text: string; taskId?: number; showButtons?: boolean }>>([
     { id: 1, text: "Selamat datang di Nemesys Telegram Notification Bot.\nKetik /start <username> untuk menghubungkan akun dashboard Anda." },
@@ -332,6 +338,12 @@ export default function App() {
         return <MissionPage customMissions={customMissions} users={users} token={token || ''} onRefresh={fetchData} isAdmin={currentUser?.role === 'Administrator'} />;
       case 'team':
         return <Team users={users} token={token || ''} isAdmin={currentUser?.role === 'Administrator'} onRefresh={fetchData} />;
+      case 'civitas-tickets':
+        return <CivitasTickets token={token || ''} currentUser={currentUser} users={users} onRefresh={fetchData} />;
+      case 'open-tickets':
+        return <OpenTicket token={token || ''} userRole={currentUser?.role || 'Teknisi'} />;
+      case 'open-tickets-dashboard':
+        return <OpenTicketDashboard token={token || ''} userRole={currentUser?.role || 'Manager'} />;
       case 'netmap-core':
         return <NetMap devices={devices} isCoreOnly={true} categories={categories} />;
       case 'netmap-global':
@@ -357,7 +369,10 @@ export default function App() {
   };
 
   if (!token || !currentUser) {
-    return <Login onLoginSuccess={handleLoginSuccess} />;
+    if (showPublicHelpdesk) {
+      return <PublicHelpdesk onBackToLogin={() => setShowPublicHelpdesk(false)} />;
+    }
+    return <Login onLoginSuccess={handleLoginSuccess} onOpenPublicHelpdesk={() => setShowPublicHelpdesk(true)} />;
   }
 
   return (
@@ -404,6 +419,17 @@ export default function App() {
           </a>
 
           <span className="menu-section-title">Supporting</span>
+          <a className={`menu-item ${currentMenu === 'civitas-tickets' ? 'active' : ''}`} onClick={() => setCurrentMenu('civitas-tickets')}>
+            <Ticket size={18} /> Tiket Civitas
+          </a>
+          <a className={`menu-item ${currentMenu === 'open-tickets' ? 'active' : ''}`} onClick={() => setCurrentMenu('open-tickets')}>
+            <Ticket size={18} /> Open Ticket
+          </a>
+          {currentUser.role !== 'Teknisi' && (
+            <a className={`menu-item ${currentMenu === 'open-tickets-dashboard' ? 'active' : ''}`} onClick={() => setCurrentMenu('open-tickets-dashboard')}>
+              <Ticket size={18} /> Ticket Dashboard
+            </a>
+          )}
           <a className={`menu-item ${currentMenu === 'documentation' ? 'active' : ''}`} onClick={() => setCurrentMenu('documentation')}>
             <BookOpen size={18} /> Documentation
           </a>

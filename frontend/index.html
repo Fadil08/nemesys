@@ -6,6 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NEMESYS - Network Management System & Gamified Ticketing</title>
     <meta name="description" content="NEMESYS v1.3 is an integrated network management system that combines real-time network infrastructure monitoring with gamified technician ticketing." />
+    <!-- Athel AI Chatbot Widget -->
+    <script>
+      // Debug widget loading
+      window.athelDebug = {
+        start: Date.now(),
+        logs: []
+      };
+      window.athelDebug.logs.push('Widget init started');
+    </script>
+    <script src="https://athel-seven.vercel.app/widget.js" data-agent-key="01d947c47ede3e33029091458a8c2c31e61e820f680eb8a6" defer onload="window.athelDebug.logs.push('Widget loaded successfully')" onerror="window.athelDebug.logs.push('Widget failed to load')"></script>
   </head>
   <body>
     <div id="root"></div>

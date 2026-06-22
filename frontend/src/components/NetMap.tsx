@@ -163,7 +163,24 @@ export const NetMap: React.FC<NetMapProps> = ({ devices, isCoreOnly, categories 
         </div>
       `;
 
-      L.marker([device.latitude, device.longitude], { icon: customIcon })
+      let lat = device.latitude;
+      let lng = device.longitude;
+
+      // Auto-sanitize coordinates with missing decimal separators
+      if (lng > 180) {
+        const lngStr = String(lng);
+        if (lngStr.startsWith('114')) {
+          lng = parseFloat('114.' + lngStr.substring(3));
+        }
+      }
+      if (lat < -90) {
+        const latStr = String(lat);
+        if (latStr.startsWith('-8')) {
+          lat = parseFloat('-8.' + latStr.substring(2).replace(/\./g, ''));
+        }
+      }
+
+      L.marker([lat, lng], { icon: customIcon })
         .bindPopup(popupContent)
         .addTo(markerGroup.current!);
     });

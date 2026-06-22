@@ -35,7 +35,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-import { handleLogin } from './auth';
+import { handleLogin, requireAuth } from './auth';
 import crudRouter from './routes/crud';
 
 app.post('/api/login', handleLogin);
@@ -567,6 +567,133 @@ const handleTelegramBotAction = async (action: 'accept' | 'complete', taskId: nu
     console.error('Failed to handle telegram trigger action:', err);
   }
 };
+
+// PUBLIC ENDPOINT: Submit Open Ticket (No Authentication Required)
+app.post('/api/public/submit-ticket', async (req, res) => {
+  const { full_name, id_number, category, unit_specification, email, whatsapp_number, service_type, description, image_url } = req.body;
+
+  // Validate required fields
+  if (!full_name || !id_number || !category || !email || !whatsapp_number || !service_type || !description) {
+    return res.status(400).json({ error: 'Semua field harus diisi' });
+  }
+
+  try {
+    // Generate ticket number
+    const ticketNumber = `TKT-${Date.now()}`;
+    const now = new Date().toLocaleString('id-ID');
+
+    const [result]: any = await pool.query(
+      'INSERT INTO open_tickets (ticket_number, full_name, id_number, category, unit_specification, email, whatsapp_number, service_type, description, status, created_at, updated_at, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, "Open", ?, ?, ?)',
+      [ticketNumber, full_name, id_number, category, unit_specification, email, whatsapp_number, service_type, description, now, now, image_url || null]
+    );
+
+    res.status(201).json({ 
+      id: result.insertId, 
+      ticket_number: ticketNumber,
+      message: 'Ticket berhasil dibuat! Anda akan menerima notifikasi di email dan WhatsApp.' 
+    });
+    
+    broadcastUpdate();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Gagal membuat ticket. Silakan coba lagi.' });
+  }
+});
+
+// PUBLIC ENDPOINT: Get ticket status (No Authentication Required)
+app.get('/api/public/tickets/status', async (req, res) => {
+  const { query } = req.query;
+  if (!query) {
+    return res.status(400).json({ error: 'Parameter pencarian tidak boleh kosong' });
+  }
+
+  try {
+    const [rows] = await pool.query(
+      'SELECT * FROM open_tickets WHERE ticket_number = ? OR id_number = ? ORDER BY id DESC',
+      [query, query]
+    );
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Database error fetching ticket status' });
+  }
+});
+
+// PROTECTED ENDPOINTS FOR TICKETS
+app.get('/api/tickets', requireAuth, async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM open_tickets ORDER BY id DESC');
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Database error fetching tickets' });
+  }
+});
+
+app.put('/api/tickets/:id/assign', requireAuth, async (req, res) => {
+  const ticketId = parseInt(req.params.id);
+  const { userId } = req.body;
+
+  try {
+    const [userRows]: any = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+    if (userRows.length === 0) {
+      return res.status(404).json({ error: 'Teknisi tidak ditemukan' });
+    }
+    const user = userRows[0];
+
+    const now = new Date().toLocaleString('id-ID');
+    await pool.query(
+      'UPDATE open_tickets SET assigned_user_id = ?, assigned_user_name = ?, status = "In Progress", updated_at = ? WHERE id = ?',
+      [user.id, user.name, now, ticketId]
+    );
+
+    // Also set technician status to Busy
+    await pool.query('UPDATE users SET status = "Busy", daily_tasks_count = daily_tasks_count + 1 WHERE id = ?', [user.id]);
+
+    broadcastUpdate();
+    res.json({ message: 'Tiket berhasil ditugaskan ke teknisi' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Database error assigning ticket' });
+  }
+});
+
+app.put('/api/tickets/:id/resolve', requireAuth, async (req, res) => {
+  const ticketId = parseInt(req.params.id);
+  const { status, resolution_notes } = req.body; // status: 'Resolved' or 'Closed' or 'Rejected'
+
+  if (!status || !['Resolved', 'Closed', 'Rejected'].includes(status)) {
+    return res.status(400).json({ error: 'Status tidak valid' });
+  }
+
+  try {
+    const [ticketRows]: any = await pool.query('SELECT * FROM open_tickets WHERE id = ?', [ticketId]);
+    if (ticketRows.length === 0) {
+      return res.status(404).json({ error: 'Tiket tidak ditemukan' });
+    }
+    const ticket = ticketRows[0];
+
+    const now = new Date().toLocaleString('id-ID');
+    await pool.query(
+      'UPDATE open_tickets SET status = ?, resolution_notes = ?, updated_at = ? WHERE id = ?',
+      [status, resolution_notes || 'Tindakan selesai.', now, ticketId]
+    );
+
+    // If technician was assigned, make them Available again
+    if (ticket.assigned_user_id) {
+      await pool.query(
+        'UPDATE users SET status = "Available", daily_tasks_count = GREATEST(0, daily_tasks_count - 1), mission_completed = mission_completed + 1 WHERE id = ?',
+        [ticket.assigned_user_id]
+      );
+    }
+
+    broadcastUpdate();
+    res.json({ message: `Tiket berhasil di-update menjadi ${status}` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Database error resolving ticket' });
+  }
+});
 
 app.use('/api', crudRouter);
 

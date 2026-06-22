@@ -190,4 +190,153 @@ router.delete('/categories/:id', async (req, res) => {
   }
 });
 
+// ----------------------------------------------------
+// OPEN TICKETS CRUD
+// ----------------------------------------------------
+
+// GET all open tickets with filtering and search
+router.get('/open-tickets', async (req, res) => {
+  try {
+    const { status, search, limit = 50, offset = 0 } = req.query;
+    let query = 'SELECT * FROM open_tickets WHERE 1=1';
+    const params: any[] = [];
+
+    if (status) {
+      query += ' AND status = ?';
+      params.push(status);
+    }
+
+    if (search) {
+      query += ' AND (full_name LIKE ? OR ticket_number LIKE ? OR email LIKE ? OR whatsapp_number LIKE ?)';
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    params.push(parseInt(limit as string), parseInt(offset as string));
+
+    const [tickets]: any = await pool.query(query, params);
+    
+    // Get total count
+    let countQuery = 'SELECT COUNT(*) as total FROM open_tickets WHERE 1=1';
+    const countParams: any[] = [];
+    if (status) {
+      countQuery += ' AND status = ?';
+      countParams.push(status);
+    }
+    if (search) {
+      countQuery += ' AND (full_name LIKE ? OR ticket_number LIKE ? OR email LIKE ? OR whatsapp_number LIKE ?)';
+      const searchTerm = `%${search}%`;
+      countParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    const [countResult]: any = await pool.query(countQuery, countParams);
+    
+    res.json({
+      tickets,
+      total: countResult[0].total,
+      limit: parseInt(limit as string),
+      offset: parseInt(offset as string)
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Database error fetching tickets' });
+  }
+});
+
+// GET single open ticket
+router.get('/open-tickets/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  try {
+    const [tickets]: any = await pool.query('SELECT * FROM open_tickets WHERE id = ?', [id]);
+    if (tickets.length === 0) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+    res.json(tickets[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Database error fetching ticket' });
+  }
+});
+
+// POST create new open ticket
+router.post('/open-tickets', async (req, res) => {
+  const { full_name, id_number, category, unit_specification, email, whatsapp_number, service_type, description } = req.body;
+
+  // Validate required fields
+  if (!full_name || !id_number || !category || !email || !whatsapp_number || !service_type || !description) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    // Generate ticket number
+    const ticketNumber = `TKT-${Date.now()}`;
+    const now = new Date().toLocaleString('id-ID');
+
+    const [result]: any = await pool.query(
+      'INSERT INTO open_tickets (ticket_number, full_name, id_number, category, unit_specification, email, whatsapp_number, service_type, description, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, "Open", ?, ?)',
+      [ticketNumber, full_name, id_number, category, unit_specification, email, whatsapp_number, service_type, description, now, now]
+    );
+
+    res.status(201).json({ 
+      id: result.insertId, 
+      ticket_number: ticketNumber,
+      message: 'Ticket created successfully' 
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Database error creating ticket' });
+  }
+});
+
+// PUT update open ticket
+router.put('/open-tickets/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  const { full_name, id_number, category, unit_specification, email, whatsapp_number, service_type, description, status, assigned_user_id, assigned_user_name, resolution_notes } = req.body;
+
+  try {
+    const now = new Date().toLocaleString('id-ID');
+    
+    await pool.query(
+      'UPDATE open_tickets SET full_name = ?, id_number = ?, category = ?, unit_specification = ?, email = ?, whatsapp_number = ?, service_type = ?, description = ?, status = ?, assigned_user_id = ?, assigned_user_name = ?, resolution_notes = ?, updated_at = ? WHERE id = ?',
+      [full_name, id_number, category, unit_specification, email, whatsapp_number, service_type, description, status, assigned_user_id, assigned_user_name, resolution_notes, now, id]
+    );
+
+    res.json({ message: 'Ticket updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Database error updating ticket' });
+  }
+});
+
+// DELETE open ticket
+router.delete('/open-tickets/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  try {
+    await pool.query('DELETE FROM open_tickets WHERE id = ?', [id]);
+    res.json({ message: 'Ticket deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Database error deleting ticket' });
+  }
+});
+
+// GET dashboard stats for open tickets
+router.get('/open-tickets/stats/dashboard', async (req, res) => {
+  try {
+    const [stats]: any = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'Open' THEN 1 ELSE 0 END) as open_count,
+        SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) as in_progress_count,
+        SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) as resolved_count,
+        SUM(CASE WHEN status = 'Closed' THEN 1 ELSE 0 END) as closed_count
+      FROM open_tickets
+    `);
+
+    res.json(stats[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Database error fetching stats' });
+  }
+});
+
 export default router;

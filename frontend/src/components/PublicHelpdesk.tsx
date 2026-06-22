@@ -871,10 +871,10 @@ export const PublicHelpdesk: React.FC<PublicHelpdeskProps> = ({ onBackToLogin })
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', justifyContent: 'center' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Mail size={16} /> ithelpdesk@untag-bwi.ac.id
+              <Mail size={16} /> ithelpdesk@untag-banyuwangi.ac.id
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Phone size={16} /> 085864892610
+              <Phone size={16} /> 085732133587
             </span>
           </div>
           <div>
